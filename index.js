@@ -146,11 +146,12 @@ class TinSoftProxy {
   }
 
   async getCurrentIP() {
+    var result = {}
     try {
-      var result = await this.ipconfig();;
-      return result;
+      result = await this.ipconfig();;
     } catch (e) {
-      var result = await this.amazonIP();;
+      result = await this.amazonIP();;
+    } finally {
       return result;
     }
   }
@@ -226,6 +227,10 @@ class TinSoftProxy {
       method: 'get',
       params: { key }
     });
+
+    const proxy = get(rps, 'proxy', '');
+    this.Stream.emit('log', `Got proxy: ${proxy}, api_key: ${key}`);
+
     return { ...rps, api_key: key };
   }
 
@@ -241,6 +246,10 @@ class TinSoftProxy {
       method: 'get',
       params: {  key, location: `${location_id}` }
     });
+
+    const proxy = get(rps, 'proxy', '');
+    this.Stream.emit('log', `Changed proxy: ${proxy}, api_key: ${key}`);
+
     return { ...rps, api_key: key };
     // {
     //   success: true,
@@ -259,6 +268,7 @@ class TinSoftProxy {
       if (e.message.includes('ECONNREFUSED')) {
         const passTime = Date.now() - startTime;
         if (passTime >= this.waitProxyLiveTimeout) throw e;
+        this.Stream.emit('log', `Waited ${passTime}ms until proxy ready`);
         return this.waitUntilProxyOK(startTime);
       }
       throw e;
