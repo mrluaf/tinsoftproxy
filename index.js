@@ -56,6 +56,7 @@ class TinSoftProxy {
     // response pre-processing
     this.service.interceptors.response.use(
       (response) => {
+        // const data = get(response, 'data', {});
         const rpSuccess = get(response, 'data.success', false);
         const rpMessage = get(response, 'data.description', 'Không có thông tin từ server.');
         if (rpSuccess === false) {
@@ -216,11 +217,12 @@ class TinSoftProxy {
     if (random) {
       const currentUserKeys = await this.userKeys();
       const availableKeys = currentUserKeys.filter(item => !item.isExp());
+
       if (availableKeys.length === 0) throw new Error('Do not have any key exp');
       const pickupRandomKey = sample(availableKeys);
       ranDomKey = get(pickupRandomKey, 'key', '');
     }
-
+    
     const key = ranDomKey || api_key || this.api_key;
     const rps = await this.service.request({
       url: '/api/getProxy.php',
@@ -302,7 +304,53 @@ class TinSoftProxy {
   }
 
   async pickup(options = {}) {
-    return this.changeIP(options);
+    let result = { isChanged: false, message: '' };
+
+    let api_key = get(options, 'api_key', '');
+    const location_id = get(options, 'api_key', '0');
+    const random = (api_key === '');
+
+    if (!api_key && random) {
+      const currentUserKeys = await this.userKeys();
+      const availableKeys = currentUserKeys.filter(item => !item.isExp());
+
+      if (availableKeys.length === 0) throw new Error('Do not have any key exp');
+      const pickupRandomKey = sample(availableKeys);
+      api_key = get(pickupRandomKey, 'key', '');
+      this.Stream.emit('log', `Pickup api_key: ${api_key}`);
+    }
+
+    try {
+      result = await this.getProxy({ api_key, random: false });
+    } catch (e) {
+      if (e.name === 'ProxyServiceError' && e.message.includes('proxy not found!')) {
+        await this.changeProxy({ api_key, location_id });
+        result = await this.getProxy({ api_key, random: false });
+        result.isChanged = true;
+      } else {
+        throw e;
+      }
+    }
+
+    let next_change = get(result, 'next_change', -1);
+    if (next_change === 0) {
+      await this.changeProxy({ api_key, location_id });
+      result = await this.getProxy({ api_key, random: false });
+      result.isChanged = true;
+
+    } else if (next_change === 120) {
+      result.isChanged = true;
+    };
+
+    next_change = get(result, 'next_change', -1);
+    result.message = `Wait ${next_change}s`;
+
+    this.proxy = get(result, 'proxy', this.proxy);
+
+    if (result.isChanged) await this.waitUntilProxyOK();
+
+    return result;
+
   }
 
   async pickupProxy(options = {}) {

@@ -5,12 +5,10 @@ var ProxyAgent = require('proxy-agent');
 
 const proxyService = new TinSoftProxy({
   user_api_key: process.env.TINSOFT_USER_API_KEY,
-  api_key: process.env.TINSOFT_API_KEY
 });
 
 proxyService.pickup({
   api_key: process.env.TINSOFT_API_KEY || '',
-  random: false,
   location_id: 0
 }).then(rp => {
   console.log('rp:', rp);

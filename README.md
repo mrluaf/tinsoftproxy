@@ -22,15 +22,13 @@ const TinSoftProxy = require('tinsoftproxy');
 (async () => {
   try {
     const proxyService = new TinSoftProxy({
-      user_api_key: 'TINSOFT_USER_API_KEY',
-      api_key: 'TINSOFT_API_KEY',
+      user_api_key: 'TINSOFT_USER_API_KEY'
     });
 
     proxyService.Stream.on('log', data => console.log('##LOG:', data));
 
     const rp = await proxyService.pickup({
       api_key: process.env.TINSOFT_API_KEY || '',
-      random: false,
       location_id: 0
     });
 
@@ -56,14 +54,12 @@ const TinSoftProxy = require('tinsoftproxy');
 ### TinSoftProxy([options])
 - `options` <[Object]>
   - `user_api_key` <[string]>: **(require)** Là api được lấy trong mục [profile](https://tinsoftproxy.com/?page=profile)
-  - `api_key` <[string]>: **(option)** api_key được lấy trong danh sách key proxy. Có thể truyền hoặc không
 
 - return <[Object]>
 
 ### .pickup([options])
 - `options` <[Object]>
-  - `api_key` <[string]> **(option)** Chỉ định api_key cần get proxy
-  - `random` <[boolean]> `Default: true` Mạc định thư viện sẽ tự động chọn key trong danh sách key của bạn.
+  - `api_key` <[string]> **(option)** Chỉ định api_key cần get proxy, hoặc để trống thì mạc định thư viện sẽ tự động chọn key
   - `location_id` <[Number]> `Default: 0` ID Location. [Danh sách tại đây](http://proxy.tinsoftsv.com/api/getLocations.php)
 
 - return <[Object]>
